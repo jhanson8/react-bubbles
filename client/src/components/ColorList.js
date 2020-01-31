@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import axios from "axios";
+import { axiosWithAuth } from "../utils/axiosWithAuth";
 
 const initialColor = {
   color: "",
@@ -10,21 +12,38 @@ const ColorList = ({ colors, updateColors }) => {
   console.log(colors);
   const [editing, setEditing] = useState(false);
   const [colorToEdit, setColorToEdit] = useState(initialColor);
+  // const [colors, setColors] = useState([]);
+  // const { id } = useParams();
 
   const editColor = color => {
     setEditing(true);
     setColorToEdit(color);
   };
 
+  //edit update
   const saveEdit = e => {
     e.preventDefault();
     // Make a put request to save your updated color
     // think about where will you get the id from...
     // where is is saved right now?
+    axiosWithAuth()
+      .put(`http://localhost:5000/api/colors/${colorToEdit.id}`, colorToEdit)
+      .then(res => {
+        axiosWithAuth()
+          .get("http://localhost:5000/api/colors/")
+          .then(res => updateColors(res.data));
+      });
   };
 
-  const deleteColor = color => {
+  //delete
+  const deleteColor = e => {
     // make a delete request to delete this color
+    // e.preventDefault();
+    axiosWithAuth()
+      .delete(`http://localhost:5000/api/colors/${e.id}`)
+      .then(res => {
+        updateColors(colors.filter(color => color.id !== res.data));
+      });
   };
 
   return (
@@ -34,12 +53,14 @@ const ColorList = ({ colors, updateColors }) => {
         {colors.map(color => (
           <li key={color.color} onClick={() => editColor(color)}>
             <span>
-              <span className="delete" onClick={e => {
-                    e.stopPropagation();
-                    deleteColor(color)
-                  }
-                }>
-                  x
+              <span
+                className="delete"
+                onClick={e => {
+                  e.stopPropagation();
+                  deleteColor(color);
+                }}
+              >
+                x
               </span>{" "}
               {color.color}
             </span>
@@ -75,8 +96,11 @@ const ColorList = ({ colors, updateColors }) => {
             />
           </label>
           <div className="button-row">
-            <button type="submit">save</button>
-            <button onClick={() => setEditing(false)}>cancel</button>
+            <button onClick={saveEdit} type="submit">
+              Save
+            </button>
+
+            <button onClick={() => setEditing(false)}>Cancel</button>
           </div>
         </form>
       )}
